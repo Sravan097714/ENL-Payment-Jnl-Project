@@ -1,0 +1,32 @@
+{
+  "id": "26c12894-f0d2-403f-9b8e-8891c6863e98",
+  "name": "ENL_Payment_Jnl",
+  "publisher": "RCTS",
+  "version": "1.0.0.0",
+  "brief": "",
+  "description": "",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "",
+  "dependencies": [{
+    "appId": "b9dd2915-46b2-4610-8ddf-77157170ddb5",
+    "publisher": "Default publisher",
+    "name": "AP",
+    "version": "1.0.0.0"
+    }],
+  "screenshots": [],
+  "platform": "17.0.0.0",
+  "application": "17.0.0.0",
+  "idRanges": [
+    {
+      "from": 50030,
+      "to": 50100
+    }
+  ],
+  "contextSensitiveHelpUrl": "https://ENL_Payment_Jnl.com/help/",
+  "showMyCode": true,
+  "runtime": "6.0",
+  "target": "OnPrem"
+}
