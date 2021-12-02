@@ -1,4 +1,4 @@
-tableextension 50080 Item extends Item
+tableextension 50079 Item extends Item
 {
     fields
     {
@@ -10,7 +10,7 @@ tableextension 50080 Item extends Item
         field(50031; "Level 2 Categorization"; Option)
         {
             DataClassification = ToBeClassified;
-            OptionMembers = "","Assiette","Hot Beverage","Cake","Ice Cream","Soft Drinks","Water","Juice","Ice","Viennoiserie","Snacks";
+            OptionMembers = "","Assiette","Hot Beverage","Cake","Ice Cream","Soft Drinks","Water","Juice","Ice","Viennoiserie","Snacks","Sports","Meeting Rooms";
             Caption = 'Level 2 Categorization';
 
         }

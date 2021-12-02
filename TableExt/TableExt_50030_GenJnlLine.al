@@ -45,6 +45,9 @@ tableextension 50030 GenJnlLineExt1 extends "Gen. Journal Line"
             var
                 customerrec: Record customer;
                 vendorrec: Record Vendor;
+                Approvalmgt: Codeunit "Approvals Mgmt.";
+                VenApprovalErr: Label 'Approval is pending for Vendor %1 to do payments.';
+                CustApprovalErr: Label 'Approval is required for Customer %1 to do payments.';
             begin
                 /* B2BSRA1.0
                 customerrec.SetRange("No.", "Account No.");
@@ -60,17 +63,29 @@ tableextension 50030 GenJnlLineExt1 extends "Gen. Journal Line"
                 case "Account Type" of
                     "Account Type"::Vendor:
                         begin
-                            vendorrec.Get("Account No.");
-                            if vendorrec.PayeeName <> '' then
-                                Payee := vendorrec.PayeeName
-                            else
-                                Payee := vendorrec.Name;
+                            if vendorrec.Get("Account No.") then begin
+                                /*
+                                if Approvalmgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
+                                    Error(VenApprovalErr, vendorrec."No.");
+                                if not Approvalmgt.HasApprovalEntries(vendorrec.RecordId) then
+                                    Error(VenApprovalErr, vendorrec."No.");
+                                */
+                                if vendorrec.PayeeName <> '' then
+                                    Payee := vendorrec.PayeeName
+                                else
+                                    Payee := vendorrec.Name;
+                            end;
                         end;
 
                     "Account Type"::Customer:
                         begin
-                            customerrec.Get("Account No.");
-                            CustomerName := customerrec.Name;
+                            if customerrec.Get("Account No.") then begin
+                                if Approvalmgt.HasOpenOrPendingApprovalEntries(customerrec.RecordId) then
+                                    Error(CustApprovalErr, customerrec."No.");
+                                if not Approvalmgt.HasApprovalEntries(customerrec.RecordId) then
+                                    Error(CustApprovalErr, customerrec."No.");
+                                CustomerName := customerrec.Name;
+                            end;
                         end;
                 end;
                 ////B2BSRA1.0 <<
@@ -103,7 +118,21 @@ tableextension 50030 GenJnlLineExt1 extends "Gen. Journal Line"
             end;
         }
 
+        modify("Payment Method Code")
+        {
+            trigger OnAfterValidate()
+            var
+                GenBatchLRec: Record "Gen. Journal Batch";
+            begin
+                GenBatchLRec.Get(Rec."Journal Template Name", Rec."Journal Batch Name");
+                if Not GenBatchLRec.MT101 then begin
+                    if "Payment Method Code" = 'MT101' then
+                        Error('Payment Method Cannot be %1 in this batch.', "Payment Method Code");
+                end else
+                    Rec.TestField("Payment Method Code", 'MT101');
 
+            end;
+        }
     }
     trigger OnBeforeModify()
     begin

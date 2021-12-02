@@ -117,6 +117,8 @@ dotnet
         }
         type(System.IO.SearchOption; SearchOption)
         { }
+        type(System.IO.File; FileDotnet)
+        { }
     }
 
     assembly("MCB.DataProcessing")
@@ -128,6 +130,22 @@ dotnet
         {
 
         }
+
+    }
+    assembly(WinSCPnet)
+    {
+        Version = '1.8.3.11829';
+        Culture = 'neutral';
+        PublicKeyToken = '2271ec4a3c56d0bf';
+        type(WinSCP.Session; WinSCPSessionDll) { }
+        type(WinSCP.SessionOptions; WinSCPSessionOptionsDll) { }
+        type(WinSCP.TransferOptions; WinSCPTransferOptionsDll) { }
+        type(WinSCP.TransferOperationResult; WinSCPTransferOperationResultDll) { }
+        type(WinSCP.TransferResumeSupport; WinSCPTransferResumeSupportDll) { }
+        type(WinSCP.TransferResumeSupportState; WinSCPTransferResumeSupportStateDll) { }
+        type(WinSCP.Protocol; WinSCPProtocolDll) { }
+        type(WinSCP.RemoteDirectoryInfo; WinSCPRemoteDirectoryInfoDll) { }
+        type(WinSCP.RemoteFileInfo; WinSCPRemoteFileInfoDll) { }
 
     }
 
