@@ -26,6 +26,7 @@ pageextension 50083 GenJnlExt extends 39
         {
             Visible = true;
         }
+        /*
         modify("Number of Lines")
         {
             Visible = false;
@@ -46,6 +47,7 @@ pageextension 50083 GenJnlExt extends 39
         {
             Visible = false;
         }
+        */
 
 
 

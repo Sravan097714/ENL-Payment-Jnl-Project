@@ -1261,7 +1261,7 @@ report 50037 "Check Laser printer"
 
         gtextamounttoprint: Text;
 
-    procedure FormatNoText(var NoText: array[2] of Text[60]; No: Decimal; CurrencyCode: Code[10])
+    procedure FormatNoText(var NoText: array[3] of Text[61]; No: Decimal; CurrencyCode: Code[10])
     var
         PrintExponent: Boolean;
         Ones: Integer;
@@ -1380,7 +1380,7 @@ report 50037 "Check Laser printer"
         */
     end;
 
-    local procedure AddToNoText(var NoText: array[2] of Text[60]; var NoTextIndex: Integer; var PrintExponent: Boolean; AddText: Text[30])
+    local procedure AddToNoText(var NoText: array[3] of Text[61]; var NoTextIndex: Integer; var PrintExponent: Boolean; AddText: Text[30])
     begin
         PrintExponent := TRUE;
 

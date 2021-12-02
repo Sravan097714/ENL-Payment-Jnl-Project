@@ -6,9 +6,19 @@ codeunit 50033 "MT101 Generator"
     begin
         GenJrnlGRec.copy(Rec);
         Code();
+        //PutFileInSFTPServer();
         Rec := GenJrnlGRec;
     end;
 
+    local procedure PutFileInSFTPServer()
+    begin
+        if WinScp.PutFile(MT101FilePath) then begin
+            Copy(CheckSumPath, MT101SFTPSetup."Archive Local Path" + FileMgt.GetFileName(CheckSumPath));
+            Erase(CheckSumPath);
+        end else
+            Error('Failed to transfer payment file to SFTP. Please contact administrator');
+
+    end;
 
     var
         TempPaymentJournal: Record "Gen. Journal Line" temporary;
@@ -28,6 +38,8 @@ codeunit 50033 "MT101 Generator"
         CountyGRec: Record "Country/Region";
         MT101LogReg: Record "MT101 Log Register";
         MT101LogEntry: Record "MT101 Log Entry";
+        CheckSumPath: Text;
+        WinScp: Codeunit "WinSFTP Processing";
 
     local procedure Code()
     var
@@ -35,18 +47,19 @@ codeunit 50033 "MT101 Generator"
         VendorLrec: Record Vendor;
         PaymentJournal: Record "Gen. Journal Line";
         VendorLedger: Record "Vendor Ledger Entry";
-        VendorBankAccountLRec: Record "Vendor Bank Account";
     begin
+
         ClearGlobals();
         CheckMT101Setup();
         TempPaymentJournal.DeleteAll();
         if GenJrnlGRec.FindFirst() then
             repeat
-                /*
-                    GenJrnlGRec.TestField("Exported to Payment File", false);
-                    GenJrnlGRec.TestField("Approval Status", GenJrnlGRec."Approval Status"::Approved);
-                    GenJrnlGRec.TestField("Bank Payment Type", GenJrnlGRec."Bank Payment Type"::"Electronic Payment");
-                    */
+                GenJrnlGRec.TestField("Exported to Payment File", false);
+                GenJrnlGRec.TestField(Status, GenJrnlGRec.Status::Released);
+                GenJrnlGRec.TestField("Bank Payment Type", GenJrnlGRec."Bank Payment Type"::"Electronic Payment");
+                GenJrnlGRec.TestField("Payment Method Code", 'MT101');
+
+                //'MT101'
                 case GenJrnlGRec."Account Type" of
                     GenJrnlGRec."Account Type"::Vendor:
                         AccNo := GenJrnlGRec."Account No.";
@@ -89,7 +102,6 @@ codeunit 50033 "MT101 Generator"
                         PaymentJournal.Modify();
 
                         VendorLrec.Get(PaymentJournal."Account No.");
-                        VendorBankAccountLRec.Get(VendorLrec."No.", VendorLrec."Preferred Bank Account Code");
 
                         VendorLedger.Reset();
                         VendorLedger.SetRange("Vendor No.", TempPaymentJournal."Account No.");
@@ -105,8 +117,10 @@ codeunit 50033 "MT101 Generator"
                                                         PaymentJournal."Currency Code",
                                                         PaymentJournal.Amount,
                                                         PaymentJournal."Document No.",
-                                                        VendorBankAccountLRec."Bank Account No.",
-                                                        PaymentJournal."Message to Recipient");
+                                                        VendorLrec."Preferred Bank Account Code",
+                                                        PaymentJournal."Message to Recipient",
+                                                        PaymentJournal.RecordId,
+                                                        PaymentJournal."External Document No.");
                             until VendorLedger.Next() = 0;
                         end else begin
                             VendorLedger.SetRange("Applies-to ID");
@@ -122,13 +136,17 @@ codeunit 50033 "MT101 Generator"
                                                             PaymentJournal."Currency Code",
                                                             PaymentJournal.Amount,
                                                             PaymentJournal."Document No.",
-                                                            VendorBankAccountLRec."Bank Account No.",
-                                                            PaymentJournal."Message to Recipient");
+                                                            VendorLrec."Preferred Bank Account Code",
+                                                            PaymentJournal."Message to Recipient",
+                                                            PaymentJournal.RecordId,
+                                                            PaymentJournal."External Document No.");
                                 until VendorLedger.Next() = 0;
                         end;
                     until TempPaymentJournal.Next() = 0;
             end;
             GenerateCheckSumFile(MT101FilePath);
+            MT101LogReg."CheckSum Storage Pointer" := CheckSumPath;
+            MT101LogReg.Modify();
             Message('File Exported Successfully');
         end;
     end;
@@ -246,7 +264,7 @@ codeunit 50033 "MT101 Generator"
         WriteToStream(copystr(RemoveSpclChar(CompanyInfo."Address 2"), 1, 35), true);
         if CountyGRec.Get(CompanyInfo."Country/Region Code") then;
         WriteToStream(CopyStr(CompanyInfo.City + ',' + CountyGRec.Name, 1, 35), true);
-        WriteToStream(':52A:' + 'A', true);
+        //WriteToStream(':52A:' + 'A', true);
         ExecutionDate := Format(Today, 0, '<Year,2><Month,2><Day,2>');
         ExecutionDate := DELCHR(ExecutionDate, '=', '/\-_*^@');
         WriteToStream(':30:' + ExecutionDate, true);
@@ -292,11 +310,12 @@ codeunit 50033 "MT101 Generator"
 
             /*
             VendorLedger.Reset();
-            VendorLedger.SetRange("Vendor No.", Vendor."No.");
-            VendorLedger.SetRange("Document No.", PaymentJournal."Applies-to Doc. No.");
-            if VendorLedger.FindFirst() then begin
-                if VendorLedger."Document Type" = VendorLedger."Document Type"::Invoice then
-                    WriteToStream('/INV/' + VendorLedger."Document No.", true);
+                VendorLedger.SetRange("Vendor No.", Vendor."No.");
+                VendorLedger.SetRange("Document No.", PaymentJournal."Applies-to Doc. No.");
+                if VendorLedger.FindFirst() then begin
+                    if VendorLedger."Document Type" = VendorLedger."Document Type"::Invoice then
+                        WriteToStream('/INV/' + VendorLedger."Document No.", true);
+    );
             end; */
             WriteToStream(':71A:OUR', true);
         end;
@@ -333,17 +352,14 @@ codeunit 50033 "MT101 Generator"
     end;
 
     local procedure ExportCheckSum(InputText: Text): Boolean
-    var
-        Path: Text;
-
     begin
-        Path := Mt101SFTPSetup."PutFile Local Path" + '001' + '-' + MT101FileName + Mt101SFTPSetup.FileExtension;
+        CheckSumPath := Mt101SFTPSetup."PutFile Local Path" + '001' + '-' + MT101FileName + Mt101SFTPSetup.FileExtension;
         Clear(SwiftFile);
-        SwiftFile.Create(Path);
+        SwiftFile.Create(CheckSumPath);
         SwiftFile.CreateOutStream(SwiftOutStream);
         SwiftOutStream.WriteText(InputText);
         SwiftFile.Close();
-        SendMail(Path, '001' + '-' + MT101FileName + Mt101SFTPSetup.FileExtension);
+        SendMail(CheckSumPath, '001' + '-' + MT101FileName + Mt101SFTPSetup.FileExtension);
     end;
 
     LOCAL Procedure GetPutFileName(): Text

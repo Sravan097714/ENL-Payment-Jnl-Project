@@ -40,9 +40,9 @@ table 50037 "MT101 SFTP Setup"
         {
             Caption = 'GetFile SFTP Path';
         }
-        field(10; "Archive SFTP Path"; Text[100])
+        field(10; "Archive Local Path"; Text[100])
         {
-            Caption = 'Archive SFTP Path';
+            Caption = 'Archive Local Path';
         }
         field(11; TLSHostCertificateFingerprint; Text[100])
         {

@@ -22,9 +22,15 @@ page 50046 "ApprovalEntriesDocument"
                     ApplicationArea = Suite;
                     //Visible = false;
                     ToolTip = 'Specifies the document number copied from the relevant sales or purchase document, such as a purchase order or a sales quote.';
-
+                    StyleExpr = StyleTxt;
                 }
-                field(GtextDescription; GtextDescription) { ApplicationArea = all; Caption = 'Description'; }
+                field(PaymentMethodCodeGVar; PaymentMethodCodeGVar)
+                {
+                    ApplicationArea = all;
+                    Caption = 'Payment Method Code';
+                    StyleExpr = StyleTxt;
+                }
+                field(GtextDescription; GtextDescription) { ApplicationArea = all; Caption = 'Description'; StyleExpr = StyleTxt; }
                 field("Limit Type"; "Limit Type")
                 {
                     ApplicationArea = Suite;
@@ -32,30 +38,34 @@ page 50046 "ApprovalEntriesDocument"
                     ToolTip = 'Specifies the type of limit that applies to the approval template:';
 
                 }
-                field(Amount; Amount) { ApplicationArea = all; }
+                field(Amount; Amount) { ApplicationArea = all; StyleExpr = StyleTxt; }
                 field("Amount (LCY)"; "Amount (LCY)")
                 {
                     ApplicationArea = Suite;
                     ToolTip = 'Specifies the total amount (excl. VAT) on the document awaiting approval. The amount is stated in the local currency.';
+                    StyleExpr = StyleTxt;
                 }
                 field("Currency Code"; "Currency Code")
                 {
                     ApplicationArea = Suite;
                     ToolTip = 'Specifies the code of the currency of the amounts on the sales or purchase lines.';
+                    StyleExpr = StyleTxt;
                 }
                 field("Due Date"; "Due Date")
                 {
                     ApplicationArea = Suite;
                     ToolTip = 'Specifies when the record must be approved, by one or more approvers.';
+                    StyleExpr = StyleTxt;
                 }
-                field(SenderName; SenderName) { ApplicationArea = all; Caption = 'Sender Name'; }
+                field(SenderName; SenderName) { ApplicationArea = all; Caption = 'Sender Name'; StyleExpr = StyleTxt; }
                 field("Date-Time Sent for Approval"; "Date-Time Sent for Approval")
                 {
                     ApplicationArea = Suite;
                     ToolTip = 'Specifies the date and the time that the document was sent for approval.';
+                    StyleExpr = StyleTxt;
                 }
-                field(ApproverName; ApproverName) { ApplicationArea = all; Caption = 'Approver Name'; }
-                field(lastmodifiedusername; lastmodifiedusername) { ApplicationArea = all; Caption = 'Last Modified User'; }
+                field(ApproverName; ApproverName) { ApplicationArea = all; Caption = 'Approver Name'; StyleExpr = StyleTxt; }
+                field(lastmodifiedusername; lastmodifiedusername) { ApplicationArea = all; Caption = 'Last Modified User'; StyleExpr = StyleTxt; }
                 field("Approval Type"; "Approval Type")
                 {
                     ApplicationArea = Suite;
@@ -333,15 +343,6 @@ page 50046 "ApprovalEntriesDocument"
                     begin
                         CurrPage.SetSelectionFilter(ApprovalEntries);
                         ApprovalsMgmt.ApproveApprovalRequests(ApprovalEntries);
-                        /*
-                        if ApprovalEntries.FindSet() then
-                            repeat
-                                RecID := ApprovalEntries."Record ID to Approve";
-                                Recref := RecID.GetRecord();
-                                Recref.SetTable(GenJnlLine);
-                                ApprovalsMgmt.ApproveGenJournalLineRequest(GenJnlLine);
-                            until ApprovalEntries.Next() = 0;
-                        */
                     end;
                 }
                 action("View Invoices")
@@ -486,6 +487,7 @@ page 50046 "ApprovalEntriesDocument"
     var
         userrec: Record User;
         genjourlinerec: Record "Gen. Journal Line";
+
     begin
         Overdue := Overdue::" ";
         if FormatField(Rec) then
@@ -516,6 +518,7 @@ page 50046 "ApprovalEntriesDocument"
         if userrec.FindFirst then
             lastmodifiedusername := userrec."Full Name";
 
+        StyleTxt := SetStyle;
     end;
 
     trigger OnOpenPage()
@@ -552,6 +555,8 @@ page 50046 "ApprovalEntriesDocument"
         CanRequestFlowApprovalForBatch: Boolean;
         GenJournalLine: Record "Gen. Journal Line";
         GtextDescription: Text;
+        StyleTxt: Text;
+        PaymentMethodCodeGVar: Code[10];
 
     procedure Setfilters(TableId: Integer; DocumentType: Option Quote,"Order",Invoice,"Credit Memo","Blanket Order","Return Order"; DocumentNo: Code[20])
     begin
@@ -599,6 +604,31 @@ page 50046 "ApprovalEntriesDocument"
     procedure CalledFrom()
     begin
         Overdue := Overdue::" ";
+    end;
+
+    procedure SetStyle() Result: Text
+    var
+        IsHandled: Boolean;
+        RecRef: RecordRef;
+        GenJnlLineLRec: Record "Gen. Journal Line";
+    begin
+        Clear(PaymentMethodCodeGVar);
+
+        if not RecRef.Get("Record ID to Approve") then
+            exit('');
+        case RecRef.Number of
+            DATABASE::"Gen. Journal Line":
+                begin
+                    RecRef.SetTable(GenJnlLineLRec);
+                    PaymentMethodCodeGVar := GenJnlLineLRec."Payment Method Code";
+                    if GenJnlLineLRec."Payment Method Code" = 'MT101' then
+                        exit('Strong')
+                    else
+                        exit('');
+                end;
+            else
+                exit('');
+        end;
     end;
 }
 

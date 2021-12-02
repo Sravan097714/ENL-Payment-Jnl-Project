@@ -44,6 +44,12 @@ report 50080 "ENL - Aged Accounts Payable"
             column(SelctAgeByDuePostngDocDt1; StrSubstNo(Text004, SelectStr(AgingBy + 1, Text009)))
             {
             }
+            column(HeaderText7; HeaderText[7])
+            {
+            }
+            column(HeaderText6; HeaderText[6])
+            {
+            }
             column(HeaderText5; HeaderText[5])
             {
             }
@@ -61,6 +67,14 @@ report 50080 "ENL - Aged Accounts Payable"
             }
             column(PrintDetails; PrintDetails)
             {
+            }
+            column(GrandTotalVLE6RemAmtLCY; GrandTotalVLERemaingAmtLCY[6])
+            {
+                AutoFormatType = 1;
+            }
+            column(GrandTotalVLE7RemAmtLCY; GrandTotalVLERemaingAmtLCY[7])
+            {
+                AutoFormatType = 1;
             }
             column(GrandTotalVLE5RemAmtLCY; GrandTotalVLERemaingAmtLCY[5])
             {
@@ -258,6 +272,14 @@ report 50080 "ENL - Aged Accounts Payable"
                     {
                         AutoFormatType = 1;
                     }
+                    column(AgedVendLedgEnt6RemAmtLCY; AgedVendorLedgEntry[6]."Remaining Amt. (LCY)")
+                    {
+                        AutoFormatType = 1;
+                    }
+                    column(AgedVendLedgEnt7RemAmtLCY; AgedVendorLedgEntry[7]."Remaining Amt. (LCY)")
+                    {
+                        AutoFormatType = 1;
+                    }
                     column(VendLedgEntryEndDtAmtLCY; VendorLedgEntryEndingDate."Amount (LCY)")
                     {
                         AutoFormatType = 1;
@@ -276,6 +298,16 @@ report 50080 "ENL - Aged Accounts Payable"
                     {
                     }
                     column(AgedVendLedgEnt5RemAmt; AgedVendorLedgEntry[5]."Remaining Amount")
+                    {
+                        AutoFormatExpression = CurrencyCode;
+                        AutoFormatType = 1;
+                    }
+                    column(AgedVendLedgEnt6RemAmt; AgedVendorLedgEntry[6]."Remaining Amount")
+                    {
+                        AutoFormatExpression = CurrencyCode;
+                        AutoFormatType = 1;
+                    }
+                    column(AgedVendLedgEnt7RemAmt; AgedVendorLedgEntry[7]."Remaining Amount")
                     {
                         AutoFormatExpression = CurrencyCode;
                         AutoFormatType = 1;
@@ -489,7 +521,7 @@ report 50080 "ENL - Aged Accounts Payable"
                 AutoFormatExpression = CurrencyCode;
                 AutoFormatType = 1;
             }
-            column(AgedVendLedgEnt6RemAmtLCY5; AgedVendorLedgEntry[6]."Remaining Amount")
+            column(AgedVendLedgEnt6RemAmtLCY5; AgedVendorLedgEntry[8]."Remaining Amount")
             {
                 AutoFormatExpression = CurrencyCode;
                 AutoFormatType = 1;
@@ -515,6 +547,16 @@ report 50080 "ENL - Aged Accounts Payable"
                 AutoFormatType = 1;
             }
             column(AgedVendLedgEnt5RemAmtLCY5; AgedVendorLedgEntry[5]."Remaining Amount")
+            {
+                AutoFormatExpression = CurrencyCode;
+                AutoFormatType = 1;
+            }
+            column(AgedVendLedgEnt6RemAmtLCY6; AgedVendorLedgEntry[6]."Remaining Amount")
+            {
+                AutoFormatExpression = CurrencyCode;
+                AutoFormatType = 1;
+            }
+            column(AgedVendLedgEnt7RemAmtLCY7; AgedVendorLedgEntry[7]."Remaining Amount")
             {
                 AutoFormatExpression = CurrencyCode;
                 AutoFormatType = 1;
@@ -657,14 +699,14 @@ report 50080 "ENL - Aged Accounts Payable"
         GLSetup: Record "General Ledger Setup";
         TempVendorLedgEntry: Record "Vendor Ledger Entry" temporary;
         VendorLedgEntryEndingDate: Record "Vendor Ledger Entry";
-        TotalVendorLedgEntry: array[5] of Record "Vendor Ledger Entry";
-        AgedVendorLedgEntry: array[6] of Record "Vendor Ledger Entry";
+        TotalVendorLedgEntry: array[7] of Record "Vendor Ledger Entry";
+        AgedVendorLedgEntry: array[8] of Record "Vendor Ledger Entry";
         TempCurrency: Record Currency temporary;
         TempCurrency2: Record Currency temporary;
         TempCurrencyAmount: Record "Currency Amount" temporary;
         DetailedVendorLedgerEntry: Record "Detailed Vendor Ledg. Entry";
         TypeHelper: Codeunit "Type Helper";
-        GrandTotalVLERemaingAmtLCY: array[5] of Decimal;
+        GrandTotalVLERemaingAmtLCY: array[7] of Decimal;
         GrandTotalVLEAmtLCY: Decimal;
         VendorFilter: Text;
         PrintAmountInLCY: Boolean;
@@ -675,9 +717,9 @@ report 50080 "ENL - Aged Accounts Payable"
         UseExternalDocNo: Boolean;
         HeadingType: Option "Date Interval","Number of Days";
         NewPagePerVendor: Boolean;
-        PeriodStartDate: array[5] of Date;
-        PeriodEndDate: array[5] of Date;
-        HeaderText: array[5] of Text[30];
+        PeriodStartDate: array[7] of Date;
+        PeriodEndDate: array[7] of Date;
+        HeaderText: array[7] of Text[30];
         Text000: Label 'Not Due';
         BeforeTok: Label 'Before';
         CurrencyCode: Code[10];

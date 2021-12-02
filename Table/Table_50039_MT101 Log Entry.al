@@ -2,8 +2,8 @@ table 50039 "MT101 Log Entry"
 {
     Caption = 'MT101 Log Entry';
     DataCaptionFields = "Account Type", "Account No.", "Jnl. Document No.";
-    //DrillDownPageID = "MT101 Log Reg. Entries";
-    //LookupPageID = "MT101 Log Reg. Entries";
+    DrillDownPageID = "MT101 Log Reg. Entries";
+    LookupPageID = "MT101 Log Reg. Entries";
 
     fields
     {
@@ -53,13 +53,21 @@ table 50039 "MT101 Log Entry"
         {
             Caption = 'Jnl. Document No.';
         }
-        field(11; "Recipient Bank Acc. No."; Code[50])
+        field(11; "Recipient Bank Acc. Code"; Code[50])
         {
             Caption = 'Recipient Bank Acc. No.';
         }
         field(12; "Message to Recipient"; Text[140])
         {
             Caption = 'Message to Recipient';
+        }
+        field(13; "Jnl. External Doc No."; Text[35])
+        {
+            Caption = 'Jnl. External Document No.';
+        }
+        field(15; "Jnl. Record ID"; RecordId)
+        {
+
         }
     }
 
@@ -80,7 +88,7 @@ table 50039 "MT101 Log Entry"
         VendLedgerEntry: Record "Vendor Ledger Entry";
         PostedGnJnl: Record "Posted Gen. Journal Line";
 
-    procedure CreateNew(RegisterNo: Integer; EntryNo: Integer; GenJnlAccountType: Enum "Gen. Journal Account Type"; AccountNo: Code[20]; LedgerEntryNo: Integer; JnlDate: Date; CurrencyCode: Code[10]; JnlAmount: Decimal; DocNo: Text[35]; RecipientBankAccount: Code[20]; MessageToRecipient: Text[140])
+    procedure CreateNew(RegisterNo: Integer; EntryNo: Integer; GenJnlAccountType: Enum "Gen. Journal Account Type"; AccountNo: Code[20]; LedgerEntryNo: Integer; JnlDate: Date; CurrencyCode: Code[10]; JnlAmount: Decimal; DocNo: Text[35]; RecipientBankAccount: Code[20]; MessageToRecipient: Text[140]; RecordIDLVar: RecordId; ExtDocNo: Code[35])
     var
         GenJnlLine: Record "Gen. Journal Line";
     begin
@@ -106,8 +114,10 @@ table 50039 "MT101 Log Entry"
         "Currency Code" := CurrencyCode;
         "Jnl. Amount" := JnlAmount;
         "Jnl. Document No." := DocNo;
-        "Recipient Bank Acc. No." := RecipientBankAccount;
+        "Recipient Bank Acc. Code" := RecipientBankAccount;
         "Message to Recipient" := MessageToRecipient;
+        "Jnl. Record ID" := RecordIDLVar;
+        "Jnl. External Doc No." := ExtDocNo;
         Insert;
     end;
 
@@ -145,14 +155,14 @@ table 50039 "MT101 Log Entry"
 
         case "Account Type" of
             "Account Type"::Customer:
-                if CustomerBankAccount.Get("Account No.", "Recipient Bank Acc. No.") then begin
+                if CustomerBankAccount.Get("Account No.", "Recipient Bank Acc. Code") then begin
                     if GetIBAN then
                         exit(CustomerBankAccount.IBAN);
 
                     exit(CustomerBankAccount."Bank Account No.");
                 end;
             "Account Type"::Vendor:
-                if VendorBankAccount.Get("Account No.", "Recipient Bank Acc. No.") then begin
+                if VendorBankAccount.Get("Account No.", "Recipient Bank Acc. Code") then begin
                     if GetIBAN then
                         exit(VendorBankAccount.IBAN);
 
@@ -237,6 +247,14 @@ table 50039 "MT101 Log Entry"
     begin
         GetAppliesToEntry(CVLedgerEntryBuffer);
         exit(CVLedgerEntryBuffer."Remaining Amount");
+    end;
+
+    procedure AppliesToExtDocumentNo(): Code[35]
+    var
+        CVLedgerEntryBuffer: Record "CV Ledger Entry Buffer";
+    begin
+        GetAppliesToEntry(CVLedgerEntryBuffer);
+        exit(CVLedgerEntryBuffer."External Document No.");
     end;
 }
 

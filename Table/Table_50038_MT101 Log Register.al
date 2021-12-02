@@ -89,12 +89,13 @@ table 50038 "MT101 Log Register"
         if FindLast then;
         Init;
         "No." += 1;
-        "Journal Batch Name" := JnlTemplateName;
+        "Journal Template Name" := JnlTemplateName;
         "Journal Batch Name" := JnlBatchName;
         "Created Date-Time" := CurrentDateTime;
         "Created by User ID" := UserId;
         UserRec.Get(UserSecurityId());
         "Created by User Name" := UserRec."Full Name";
+        "Storage Pointer" := FileName;
         Insert;
         MT101LogReg := Rec;
     end;

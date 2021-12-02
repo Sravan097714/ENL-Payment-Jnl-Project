@@ -5,8 +5,8 @@ page 50032 "MT101 General Journal Batches"
     PageType = List;
     PromotedActionCategories = 'New,Process,Report,Navigate';
     SourceTable = "Gen. Journal Batch";
-    ApplicationArea = All;
-    UsageCategory = Lists;
+    //ApplicationArea = All;
+    //UsageCategory = Lists;
 
     layout
     {

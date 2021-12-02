@@ -24,8 +24,11 @@ page 50036 "MT101 Payment Journal"
                 ToolTip = 'Specifies the name of the journal batch, a personalized journal layout, that the journal is based on.';
 
                 trigger OnLookup(var Text: Text): Boolean
+                var
+                    GnlJrnlPost: Codeunit "Gen Jnl Posting";
                 begin
                     CurrPage.SaveRecord;
+                    //GnlJrnlPost.MT101BatchLookupName(CurrentJnlBatchName, Rec);
                     GenJnlManagement.LookupName(CurrentJnlBatchName, Rec);
                     SetControlAppearanceFromBatch;
                     CurrPage.Update(false);
@@ -47,14 +50,6 @@ page 50036 "MT101 Payment Journal"
                     StyleExpr = HasPmtFileErr;
                     ToolTip = 'Specifies the posting date for the entry.';
                 }
-                field("Document Date"; "Document Date")
-                {
-                    ApplicationArea = Basic, Suite;
-                    Style = Attention;
-                    StyleExpr = HasPmtFileErr;
-                    ToolTip = 'Specifies the date when the related document was created.';
-                    Visible = false;
-                }
                 field("Document Type"; "Document Type")
                 {
                     ApplicationArea = Basic, Suite;
@@ -70,29 +65,24 @@ page 50036 "MT101 Payment Journal"
                     ToolTip = 'Specifies a document number for the journal line.';
                     ShowMandatory = true;
                 }
-                field("Approval Route"; "Approval Route") { ApplicationArea = All; }
-                field("Incoming Document Entry No."; "Incoming Document Entry No.")
+                field(Status; Rec.Status)
                 {
-                    ApplicationArea = Basic, Suite;
-                    ToolTip = 'Specifies the number of the incoming document that this general journal line is created for.';
-                    Visible = false;
-
-                    trigger OnAssistEdit()
+                    ApplicationArea = all;
+                    Editable = false;
+                }
+                field("Approval Route"; "Approval Route")
+                {
+                    ApplicationArea = All;
+                    trigger OnValidate()
                     begin
-                        if "Incoming Document Entry No." > 0 then
-                            HyperLink(GetIncomingDocumentURL);
+                        if Rec."Approval Route" = '' then
+                            Error('Approval Route cannot be empty for payment line.');
                     end;
                 }
                 field("External Document No."; "External Document No.")
                 {
                     ApplicationArea = Basic, Suite;
                     ToolTip = 'Specifies a document number that refers to the customer''s or vendor''s numbering system.';
-                }
-                field("Applies-to Ext. Doc. No."; "Applies-to Ext. Doc. No.")
-                {
-                    ApplicationArea = Basic, Suite;
-                    ToolTip = 'Specifies the external document number that will be exported in the payment file.';
-                    Visible = false;
                 }
                 field("Account Type"; "Account Type")
                 {
@@ -119,6 +109,7 @@ page 50036 "MT101 Payment Journal"
                         GenJnlManagement.GetAccounts(Rec, AccName, BalAccName);
                         ShowShortcutDimCode(ShortcutDimCode);
                         CurrPage.SaveRecord();
+                        "Check Printed" := true;
                     end;
                 }
                 field("Recipient Bank Account"; "Recipient Bank Account")
@@ -138,18 +129,6 @@ page 50036 "MT101 Payment Journal"
                     Style = Attention;
                     StyleExpr = HasPmtFileErr;
                     ToolTip = 'Specifies a description of the entry.';
-                }
-                field("Salespers./Purch. Code"; "Salespers./Purch. Code")
-                {
-                    ApplicationArea = Suite;
-                    ToolTip = 'Specifies the salesperson or purchaser who is linked to the journal line.';
-                    Visible = false;
-                }
-                field("Campaign No."; "Campaign No.")
-                {
-                    ApplicationArea = RelationshipMgmt;
-                    ToolTip = 'Specifies the number of the campaign that the journal line is linked to.';
-                    Visible = false;
                 }
                 field("Currency Code"; "Currency Code")
                 {
@@ -349,34 +328,27 @@ page 50036 "MT101 Payment Journal"
                 {
                     ApplicationArea = Basic, Suite;
                     ToolTip = 'Specifies the code for the payment type to be used for the entry on the journal line.';
-                }
-                field("Check Printed"; "Check Printed")
-                {
-                    ApplicationArea = Basic, Suite;
-                    ToolTip = 'Specifies whether a check has been printed for the amount on the payment journal line.';
-                    Visible = false;
-                }
-                field("Reason Code"; "Reason Code")
-                {
-                    ApplicationArea = Basic, Suite;
-                    ToolTip = 'Specifies the reason code, a supplementary source code that enables you to trace the entry.';
-                    Visible = false;
+                    Editable = false;
                 }
                 field(Correction; Correction)
                 {
                     ApplicationArea = Basic, Suite;
                     ToolTip = 'Specifies the entry as a corrective entry. You can use the field if you need to post a corrective entry to an account.';
                 }
-                field(CommentField; Comment)
-                {
-                    ApplicationArea = Comments;
-                    ToolTip = 'Specifies a comment about the activity on the journal line. Note that the comment is not carried forward to posted entries.';
-                    Visible = false;
-                }
                 field("Exported to Payment File"; "Exported to Payment File")
                 {
                     ApplicationArea = Basic, Suite;
+                    Editable = true;
                     ToolTip = 'Specifies that the payment journal line was exported to a payment file.';
+                }
+                field("Check Printed"; "Check Printed")
+                {
+                    ApplicationArea = all;
+
+                }
+                field("Check Transmitted"; "Check Transmitted")
+                {
+                    ApplicationArea = all;
                 }
                 field(TotalExportedAmount; TotalExportedAmount)
                 {
@@ -388,27 +360,6 @@ page 50036 "MT101 Payment Journal"
                     trigger OnDrillDown()
                     begin
                         DrillDownExportedAmount
-                    end;
-                }
-                field("Has Payment Export Error"; "Has Payment Export Error")
-                {
-                    ApplicationArea = Basic, Suite;
-                    ToolTip = 'Specifies that an error occurred when you used the Export Payments to File function in the Payment Journal window.';
-                }
-                field("Job Queue Status"; "Job Queue Status")
-                {
-                    ApplicationArea = All;
-                    Importance = Additional;
-                    ToolTip = 'Specifies the status of a job queue entry or task that handles the posting of general journals.';
-                    Visible = JobQueuesUsed;
-
-                    trigger OnDrillDown()
-                    var
-                        JobQueueEntry: Record "Job Queue Entry";
-                    begin
-                        if "Job Queue Status" = "Job Queue Status"::" " then
-                            exit;
-                        JobQueueEntry.ShowStatusMsg("Job Queue Entry ID");
                     end;
                 }
                 field("Shortcut Dimension 1 Code"; "Shortcut Dimension 1 Code")
@@ -778,6 +729,7 @@ page 50036 "MT101 Payment Journal"
                     Caption = 'Suggest Employee Payments';
                     Ellipsis = true;
                     Image = SuggestVendorPayments;
+                    Visible = false;
                     Promoted = true;
                     PromotedCategory = Category5;
                     PromotedIsBig = true;
@@ -797,6 +749,7 @@ page 50036 "MT101 Payment Journal"
                     ApplicationArea = Basic, Suite;
                     Caption = 'P&review Check';
                     Image = ViewCheck;
+                    Visible = false;
                     Promoted = true;
                     PromotedCategory = Category11;
                     RunObject = Page "Check Preview";
@@ -811,6 +764,7 @@ page 50036 "MT101 Payment Journal"
                     ApplicationArea = Basic, Suite;
                     Caption = 'Print Check';
                     Ellipsis = true;
+                    Visible = false;
                     Image = PrintCheck;
                     Promoted = true;
                     PromotedCategory = Category11;
@@ -836,6 +790,7 @@ page 50036 "MT101 Payment Journal"
                         Caption = 'E&xport';
                         Ellipsis = true;
                         Image = ExportFile;
+                        Enabled = ExportEnable;
                         Promoted = true;
                         PromotedCategory = Category4;
                         PromotedIsBig = true;
@@ -847,10 +802,14 @@ page 50036 "MT101 Payment Journal"
                             Window: Dialog;
                         begin
                             Window.Open(GeneratingPaymentsMsg);
-                            //CheckIfPrivacyBlocked;
                             GenJnlLine.Copy(Rec);
-                            CurrPage.SetSelectionFilter(GenJnlLine);
+                            CheckIfPrivacyBlocked;
                             CODEUNIT.Run(CODEUNIT::"MT101 Generator", GenJnlLine);
+
+                            CODEUNIT.Run(CODEUNIT::"Gen. Jnl.-Post", Rec);
+                            CurrentJnlBatchName := GetRangeMax("Journal Batch Name");
+                            SetJobQueueVisibility();
+                            CurrPage.Update(false);
                         end;
                     }
                     action(VoidPayments)
@@ -860,6 +819,7 @@ page 50036 "MT101 Payment Journal"
                         Ellipsis = true;
                         Image = VoidElectronicDocument;
                         Promoted = true;
+                        Visible = false;
                         PromotedCategory = Category4;
                         PromotedIsBig = true;
                         ToolTip = 'Void the exported electronic payment file.';
@@ -878,6 +838,7 @@ page 50036 "MT101 Payment Journal"
                         Ellipsis = true;
                         Image = TransmitElectronicDoc;
                         Promoted = true;
+                        Visible = false;
                         PromotedCategory = Category4;
                         PromotedIsBig = true;
                         ToolTip = 'Transmit the exported electronic payment file to the bank.';
@@ -896,6 +857,7 @@ page 50036 "MT101 Payment Journal"
                     Caption = 'Void Check';
                     Image = VoidCheck;
                     Promoted = true;
+                    Visible = false;
                     PromotedCategory = Category11;
                     ToolTip = 'Void the check if, for example, the check is not cashed by the bank.';
 
@@ -915,6 +877,7 @@ page 50036 "MT101 Payment Journal"
                     Caption = 'Void &All Checks';
                     Image = VoidAllChecks;
                     Promoted = true;
+                    Visible = false;
                     PromotedCategory = Category11;
                     ToolTip = 'Void all checks if, for example, the checks are not cashed by the bank.';
 
@@ -935,25 +898,24 @@ page 50036 "MT101 Payment Journal"
                         end;
                     end;
                 }
-                action(CreditTransferRegEntries)
+                action(MT101LogRegEntries)
                 {
-                    ApplicationArea = Basic, Suite;
-                    Caption = 'Credit Transfer Reg. Entries';
+                    ApplicationArea = All;
+                    Caption = 'MT101 Log Reg. Entries';
                     Image = ExportReceipt;
                     Promoted = true;
                     PromotedCategory = Category4;
-                    RunObject = Codeunit "Gen. Jnl.-Show CT Entries";
-                    ToolTip = 'View or edit the credit transfer entries that are related to file export for credit transfers.';
+                    RunObject = page "MT101 Log Reg. Entries";
+                    RunPageLink = "Jnl. Document No." = field("Document No.");
                 }
-                action(CreditTransferRegisters)
+                action(MT101LogRegisters)
                 {
-                    ApplicationArea = Basic, Suite;
-                    Caption = 'Credit Transfer Registers';
+                    ApplicationArea = All;
+                    Caption = 'MT101 Log Registers';
                     Image = ExportElectronicDocument;
                     Promoted = true;
                     PromotedCategory = Category4;
-                    RunObject = Page "Credit Transfer Registers";
-                    ToolTip = 'View or edit the payment files that have been exported in connection with credit transfers.';
+                    RunObject = Page "MT101 Log Registers";
                 }
             }
             action(Approvals)
@@ -987,6 +949,7 @@ page 50036 "MT101 Payment Journal"
                     ApplicationArea = Basic, Suite;
                     Caption = 'Renumber Document Numbers';
                     Image = EditLines;
+                    Visible = false;
                     ToolTip = 'Resort the numbers in the Document No. column to avoid posting errors because the document numbers are not in sequence. Entry applications and line groupings are preserved.';
 
                     trigger OnAction()
@@ -1012,6 +975,7 @@ page 50036 "MT101 Payment Journal"
                     ApplicationArea = Basic, Suite;
                     Caption = 'Calculate Posting Date';
                     Image = CalcWorkCenterCalendar;
+                    Visible = false;
                     Promoted = true;
                     PromotedCategory = Category5;
                     ToolTip = 'Calculate the date that will appear as the posting date on the journal lines.';
@@ -1026,6 +990,7 @@ page 50036 "MT101 Payment Journal"
                     ApplicationArea = Basic, Suite;
                     Caption = 'Insert Conv. LCY Rndg. Lines';
                     Image = InsertCurrency;
+                    Visible = false;
                     RunObject = Codeunit "Adjust Gen. Journal Balance";
                     ToolTip = 'Insert a rounding correction line in the journal. This rounding correction line will balance in LCY when amounts in the foreign currency also balance. You can then post the journal.';
                 }
@@ -1356,6 +1321,69 @@ page 50036 "MT101 Payment Journal"
                         WorkflowManagement.NavigateToWorkflows(DATABASE::"Gen. Journal Line", EventFilter);
                     end;
                 }
+
+                action("Payment Remittance Before Post")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Payment Remittance Before post';
+                    Image = PreviewChecks;
+                    Promoted = true;
+                    PromotedIsBig = true;
+                    PromotedCategory = Category4;
+                    ToolTip = 'View journal line entries, payment discounts, discount tolerance amounts, payment tolerance, and any errors associated with the entries. You can use the results of the report to review payment journal lines and to review the results of posting before you actually post.';
+
+                    trigger OnAction()
+                    var
+                        GenJournalBatch: Record "Gen. Journal Batch";
+                    begin
+                        GenJournalBatch.Init();
+                        GenJournalBatch.SetRange("Journal Template Name", "Journal Template Name");
+                        GenJournalBatch.SetRange(Name, "Journal Batch Name");
+                        REPORT.Run(REPORT::"PaymentRemittanceBeforePost", true, false, GenJournalBatch);
+                    end;
+
+                }
+                action("Vendor Remittance")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Vendor Remittance';
+                    Image = PreviewChecks;
+                    Promoted = true;
+                    PromotedIsBig = true;
+                    PromotedCategory = Category4;
+                    ToolTip = 'View journal line entries, payment discounts, discount tolerance amounts, payment tolerance, and any errors associated with the entries. You can use the results of the report to review payment journal lines and to review the results of posting before you actually post.';
+
+                    trigger OnAction()
+                    var
+                        GenJournalBatch: Record "Gen. Journal Batch";
+                    begin
+                        GenJournalBatch.Init();
+                        GenJournalBatch.SetRange("Journal Template Name", "Journal Template Name");
+                        GenJournalBatch.SetRange(Name, "Journal Batch Name");
+                        REPORT.Run(REPORT::"Vendor Remittance", true, false, GenJournalBatch);
+                    end;
+
+                }
+                action("Vendor Remittance Before Post")
+                {
+                    ApplicationArea = all;
+                    Caption = 'Vendor Remittance Manual Check';
+                    Promoted = true;
+                    PromotedIsBig = true;
+                    PromotedCategory = Category4;
+                    Image = PreviewChecks;
+                    trigger OnAction()
+                    var
+                        GenJournalBatch: Record "Gen. Journal Batch";
+                    begin
+                        GenJournalBatch.Init();
+                        GenJournalBatch.SetRange("Journal Template Name", Rec."Journal Template Name");
+                        GenJournalBatch.SetRange(Name, Rec."Journal Batch Name");
+                        REPORT.Run(REPORT::"Vendor Remittance Before Post", true, false, GenJournalBatch);
+                    end;
+
+                }
+
             }
             group(Approval)
             {
@@ -1507,6 +1535,7 @@ page 50036 "MT101 Payment Journal"
         TotalBalanceVisible := true;
         BalanceVisible := true;
         AmountVisible := true;
+        ExportEnable := true;
         GeneralLedgerSetup.Get();
         SetJobQueueVisibility();
     end;
@@ -1514,6 +1543,7 @@ page 50036 "MT101 Payment Journal"
     trigger OnInsertRecord(BelowxRec: Boolean): Boolean
     begin
         CurrPage.IncomingDocAttachFactBox.PAGE.SetCurrentRecordID(RecordId);
+        Rec.TestField("Approval Route");
     end;
 
     trigger OnModifyRecord(): Boolean
@@ -1530,6 +1560,11 @@ page 50036 "MT101 Payment Journal"
         Clear(ShortcutDimCode);
         "Payment Method Code" := 'MT101';
         "Bank Payment Type" := "Bank Payment Type"::"Electronic Payment";
+        "Check Printed" := true;
+        "Check Transmitted" := true;
+
+
+
     end;
 
     trigger OnOpenPage()
@@ -1554,7 +1589,7 @@ page 50036 "MT101 Payment Journal"
             SetControlAppearanceFromBatch;
             exit;
         end;
-        GenJnlManagement.TemplateSelection(PAGE::"Payment Journal", "Gen. Journal Template Type"::Payments, false, Rec, JnlSelected);
+        GenJnlManagement.TemplateSelection(PAGE::"MT101 Payment Journal", "Gen. Journal Template Type"::Payments, false, Rec, JnlSelected);
         if not JnlSelected then
             Error('');
         GenJnlManagement.OpenJnl(CurrentJnlBatchName, Rec);
@@ -1617,6 +1652,8 @@ page 50036 "MT101 Payment Journal"
         JobQueueVisible: Boolean;
         BackgroundErrorCheck: Boolean;
         ShowAllLinesEnabled: Boolean;
+        ExportEnable: Boolean;
+        UserSetup: Record "User Setup";
 
     protected var
         ShortcutDimCode: array[8] of Code[20];
@@ -1656,7 +1693,7 @@ page 50036 "MT101 Payment Journal"
     begin
         ApplyEntriesActionEnabled :=
           ("Account Type" in ["Account Type"::Customer, "Account Type"::Vendor]) or
-          ("Bal. Account Type" in ["Bal. Account Type"::Customer, "Bal. Account Type"::Vendor]);
+          ("Bal. Account Type" in ["Bal. Account Type"::Customer, "Bal. Account Type"::Vendor]) and (Status = status::Open);
     end;
 
     local procedure CurrentJnlBatchNameOnAfterVali()
@@ -1694,6 +1731,8 @@ page 50036 "MT101 Payment Journal"
         ShowAllLinesEnabled := true;
         SwitchLinesWithErrorsFilter(ShowAllLinesEnabled);
         JournalErrorsMgt.SetFullBatchCheck(true);
+        UserSetup.Get(UserId);
+        ExportEnable := UserSetup."Access To Export MT101";
     end;
 
     local procedure CheckOpenApprovalEntries(BatchRecordId: RecordID)
@@ -1765,5 +1804,6 @@ page 50036 "MT101 Payment Journal"
     local procedure OnAfterValidateShortcutDimCode(var GenJournalLine: Record "Gen. Journal Line"; var ShortcutDimCode: array[8] of Code[20]; DimIndex: Integer)
     begin
     end;
+
 }
 

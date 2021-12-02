@@ -76,6 +76,24 @@ pageextension 50032 CustomerCardExt extends "Customer Card"
         {
             Editable = false;
         }
+        addafter(Shipping)
+        {
+            group(POS)
+            {
+                Caption = 'POS Additional Info';
+                field(Package; Rec.Package) { ApplicationArea = all; }
+                field(Gender; Rec.Gender) { ApplicationArea = all; }
+                field(District; Rec.District) { ApplicationArea = all; }
+                field("Date Of Birth"; Rec."Date Of Birth") { ApplicationArea = all; }
+            }
+            group("Bank Details")
+            {
+                field("Bank Code"; Rec."Bank Code") { ApplicationArea = all; }
+                field("Bank Account No."; Rec."Bank Account No.") { ApplicationArea = all; }
+                field("Bank HandShake Code"; Rec."Bank HandShake Code") { ApplicationArea = all; }
+                field("Bank Reference Code"; Rec."Bank Reference Code") { ApplicationArea = all; }
+            }
+        }
 
 
     }

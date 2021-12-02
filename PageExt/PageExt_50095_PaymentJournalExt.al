@@ -89,6 +89,15 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
                 ApplicationArea = all;
                 Editable = false;
             }
+            field("Approval Route"; "Approval Route")
+            {
+                ApplicationArea = All;
+                trigger OnValidate()
+                begin
+                    if Rec."Approval Route" = '' then
+                        Error('Approval Route cannot be empty for payment line.');
+                end;
+            }
         }
 
 
@@ -97,7 +106,6 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
         {
 
             field("Check Transmitted"; "Check Transmitted") { ApplicationArea = All; }
-            field("Approval Route"; "Approval Route") { ApplicationArea = All; }
         }
     }
     actions
@@ -137,6 +145,22 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
                     GenJournalBatch.SetRange("Journal Template Name", "Journal Template Name");
                     GenJournalBatch.SetRange(Name, "Journal Batch Name");
                     REPORT.Run(REPORT::"Vendor Remittance", true, false, GenJournalBatch);
+                end;
+
+            }
+            action("Vendor Remittance Before Post")
+            {
+                ApplicationArea = Basic, Suite;
+                Caption = 'Vendor Remittance Manual Check';
+                Image = PreviewChecks;
+                trigger OnAction()
+                var
+                    GenJournalBatch: Record "Gen. Journal Batch";
+                begin
+                    GenJournalBatch.Init();
+                    GenJournalBatch.SetRange("Journal Template Name", "Journal Template Name");
+                    GenJournalBatch.SetRange(Name, "Journal Batch Name");
+                    REPORT.Run(REPORT::"Vendor Remittance Before Post", true, false, GenJournalBatch);
                 end;
 
             }
@@ -203,6 +227,12 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
         }
     }
 
+    trigger OnInsertRecord(xRrec: Boolean): Boolean
     var
         myInt: Integer;
+    begin
+        Rec.TestField("Approval Route");
+    end;
+
+
 }

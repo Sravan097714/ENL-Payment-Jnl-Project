@@ -127,6 +127,32 @@ codeunit 50030 "Gen Jnl Posting"
         end;
     end; */
 
+    [EventSubscriber(ObjectType::Table, Database::"Gen. Journal Batch", 'OnAfterInsertEvent', '', true, true)]
+    local procedure OnAfterInsertBatch(var Rec: Record "Gen. Journal Batch")
+    var
+        GenJnlTemplate: Record "Gen. Journal Template";
+    begin
+        if not GenJnlTemplate.Get(Rec."Journal Template Name") then
+            exit;
+        if GenJnlTemplate.MT101 then
+            Rec.MT101 := true;
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"GenJnlManagement", 'OnBeforeLookupName', '', true, true)]
+    local procedure "GenJnlManagement_OnBeforeLookupName"(var GenJnlBatch: Record "Gen. Journal Batch")
+    var
+        GenJnlTemplate: Record "Gen. Journal Template";
+    begin
+        if not GenJnlTemplate.Get(GenJnlBatch."Journal Template Name") then
+            exit;
+        if GenJnlTemplate.MT101 then
+            GenJnlBatch.SetRange(MT101, true)
+        else
+            GenJnlBatch.SetRange(MT101, false)
+
+    end;
+
+
     var
         gcodePVNumber: Code[20];
         gtextAccountType: Text;

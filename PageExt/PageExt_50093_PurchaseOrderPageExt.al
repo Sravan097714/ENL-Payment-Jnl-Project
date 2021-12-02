@@ -95,28 +95,6 @@ pageextension 50093 PurchaseOrderPageExt extends "Purchase Order"
         {
             Visible = false;
         }
-        //B2BSRA1.0 >>
-        addafter(DocAttach)
-        {
-            action(ClosePO)
-            {
-                ApplicationArea = All;
-                Caption = 'Close';
-                Image = CloseDocument;
-                Promoted = true;
-                PromotedCategory = Category8;
-                ToolTip = 'Will move to PO Closed List';
-
-                trigger OnAction()
-                begin
-                    Rec.TestField(Status, Rec.Status::Released);
-                    Rec.Status := Rec.Status::Closed;
-                    Rec.Modify(true);
-                end;
-            }
-
-        }
-        //B2BSRA1.0 <<  
 
     }
 

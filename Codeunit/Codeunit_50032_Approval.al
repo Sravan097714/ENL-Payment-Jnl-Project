@@ -97,17 +97,95 @@ codeunit 50032 ApprovalENL
     var
         GenJnlLineLRec: Record "Gen. Journal Line";
         ApprlMgt: Codeunit "Approvals Mgmt.";
+        GenJnlTemplate: Record "Gen. Journal Template";
+        CheckForBankFileExport: Boolean;
+        VenApprovalErr: Label 'Approval is pending for Vendor %1 to do payments.';
+        VendorRec: Record Vendor;
     begin
-        if PreviewMode then
-            exit;
+
+        CheckForBankFileExport := GenJnlTemplate.Get(GenJournalLine."Journal Template Name") and GenJnlTemplate.MT101;
         GenJnlLineLRec.copy(GenJournalLine);
         if GenJnlLineLRec.FindSet() then
             repeat
-                if ApprlMgt.IsGeneralJournalLineApprovalsWorkflowEnabled(GenJnlLineLRec) then
-                    GenJnlLineLRec.TestField(Status, GenJnlLineLRec.Status::Released);
+                if GenJnlLineLRec."Account Type" = GenJnlLineLRec."Account Type"::Vendor then
+                    vendorRec.Get(GenJnlLineLRec."Account No.")
+                else
+                    if GenJnlLineLRec."Bal. Account Type" = GenJnlLineLRec."Bal. Account Type"::Vendor then
+                        vendorRec.Get(GenJnlLineLRec."Bal. Account No.");
+                if not VendorRec.IsEmpty then begin
+                    if ApprlMgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
+                        Error(VenApprovalErr, vendorrec."No.");
+                    if not ApprlMgt.HasApprovalEntries(vendorrec.RecordId) then
+                        Error(VenApprovalErr, vendorrec."No.");
+                end;
+                if not PreviewMode then begin
+                    if ApprlMgt.IsGeneralJournalLineApprovalsWorkflowEnabled(GenJnlLineLRec) then
+                        GenJnlLineLRec.TestField(Status, GenJnlLineLRec.Status::Released);
+                    if CheckForBankFileExport then
+                        GenJnlLineLRec.TestField("Exported to Payment File");
+                end;
             until GenJnlLineLRec.Next() = 0;
     end;
 
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Approvals Mgmt.", 'OnSendGeneralJournalLineForApproval', '', true, true)]
+    local procedure "Approvals Mgmt._OnSendGeneralJournalLineForApproval"(var GenJournalLine: Record "Gen. Journal Line")
+    begin
+        GenJournalLine.TestField("Approval Route");
+    end;
+
+    [EventSubscriber(ObjectType::Table, Database::"Gen. Journal Line", 'OnModifyOnBeforeTestCheckPrinted', '', true, true)]
+    local procedure "Gen. Journal Line_OnModifyOnBeforeTestCheckPrinted"
+    (
+        var GenJournalLine: Record "Gen. Journal Line";
+        var IsHandled: Boolean
+    )
+    begin
+        if GenJournalLine."Payment Method Code" = 'MT101' then
+            IsHandled := true;
+    end;
+    /*
+        [EventSubscriber(ObjectType::Report, Report::"Notification Email", 'OnSetReportFieldPlaceholdersOnAfterGetDocumentURL', '', true, true)]
+        local procedure "Notification Email_OnSetReportFieldPlaceholdersOnAfterGetDocumentURL"
+        (
+            var DocumentURL: Text;
+            var NotificationEntry: Record "Notification Entry"
+        )
+        var
+            DataTypeManagement: Codeunit "Data Type Management";
+            RecRef: RecordRef;
+            TargetRecRef: RecordRef;
+            PageManagement: Codeunit "Page Management";
+        begin
+            DataTypeManagement.GetRecordRef(NotificationEntry."Triggered By Record", RecRef);
+            if RecRef.Number <> database::"Approval Entry" then
+                exit;
+            GetTargetRecRef(RecRef, TargetRecRef, NotificationEntry);
+            if TargetRecRef.Number <> database::"Gen. Journal Line" then
+                exit;
+            DocumentURL := PageManagement.GetWebUrl(RecRef, 50046);
+        end;
+
+        local procedure GetTargetRecRef(RecRef: RecordRef; var TargetRecRefOut: RecordRef; NotificationEntry: Record "Notification Entry")
+        var
+            ApprovalEntry: Record "Approval Entry";
+            OverdueApprovalEntry: Record "Overdue Approval Entry";
+        begin
+            case NotificationEntry.Type of
+                NotificationEntry.Type::"New Record":
+                    TargetRecRefOut := RecRef;
+                NotificationEntry.Type::Approval:
+                    begin
+                        RecRef.SetTable(ApprovalEntry);
+                        TargetRecRefOut.Get(ApprovalEntry."Record ID to Approve");
+                    end;
+                NotificationEntry.Type::Overdue:
+                    begin
+                        RecRef.SetTable(OverdueApprovalEntry);
+                        TargetRecRefOut.Get(OverdueApprovalEntry."Record ID to Approve");
+                    end;
+            end;
+        end;
+        */
     //B2BSRA1.0 <<
 
 

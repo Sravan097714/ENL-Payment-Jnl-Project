@@ -35,8 +35,9 @@ page 50088 "MT101 SFTP Setup"
                 field("GetFile SFTP Path"; "GetFile SFTP Path")
                 {
                 }
-                field("Archive SFTP Path"; "Archive SFTP Path")
+                field("Archive Local Path"; "Archive Local Path")
                 {
+
                 }
                 field(TLSHostCertificateFingerprint; TLSHostCertificateFingerprint)
                 {
