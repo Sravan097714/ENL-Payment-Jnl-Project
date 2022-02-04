@@ -38,6 +38,13 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
         modify(Amount)
         {
             Visible = true;
+            trigger OnAfterValidate()
+            var
+                myInt: Integer;
+            begin
+                CurrPage.Update();
+            end;
+
         }
         modify(TotalExportedAmount)
         {
@@ -51,6 +58,7 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
         {
             Visible = false;
         }
+        /*
         modify("Number of Lines")
         {
             Visible = false;
@@ -62,6 +70,20 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
         modify("Total Balance")
         {
             Visible = false;
+        }*/
+        addafter("Total Balance")
+        {
+            group(TotalAmount)
+            {
+                Caption = 'Total Column Amount';
+                field(TotalAmountLbl; GenPosting.ReturnTotalAmountOfJnlLines(Rec))
+                {
+                    ApplicationArea = All;
+                    ShowCaption = false;
+                    Editable = false;
+                    ToolTip = 'Specifies the Sum Of Amount in the current journal batch.';
+                }
+            }
         }
 
         addafter("Bank Payment Type")
@@ -99,8 +121,6 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
                 end;
             }
         }
-
-
 
         addlast(Control1)
         {
@@ -231,8 +251,9 @@ pageextension 50095 PaymentJournalExt extends "Payment Journal"
     var
         myInt: Integer;
     begin
-        Rec.TestField("Approval Route");
+        //Rec.TestField("Approval Route");
     end;
 
-
+    var
+        GenPosting: Codeunit "Gen Jnl Posting";
 }

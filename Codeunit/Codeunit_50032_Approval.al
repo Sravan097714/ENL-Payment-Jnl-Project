@@ -101,22 +101,30 @@ codeunit 50032 ApprovalENL
         CheckForBankFileExport: Boolean;
         VenApprovalErr: Label 'Approval is pending for Vendor %1 to do payments.';
         VendorRec: Record Vendor;
+        PurchasePayble: Record "Purchases & Payables Setup";
     begin
 
         CheckForBankFileExport := GenJnlTemplate.Get(GenJournalLine."Journal Template Name") and GenJnlTemplate.MT101;
         GenJnlLineLRec.copy(GenJournalLine);
         if GenJnlLineLRec.FindSet() then
             repeat
-                if GenJnlLineLRec."Account Type" = GenJnlLineLRec."Account Type"::Vendor then
-                    vendorRec.Get(GenJnlLineLRec."Account No.")
-                else
-                    if GenJnlLineLRec."Bal. Account Type" = GenJnlLineLRec."Bal. Account Type"::Vendor then
-                        vendorRec.Get(GenJnlLineLRec."Bal. Account No.");
-                if not VendorRec.IsEmpty then begin
-                    if ApprlMgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
-                        Error(VenApprovalErr, vendorrec."No.");
-                    if not ApprlMgt.HasApprovalEntries(vendorrec.RecordId) then
-                        Error(VenApprovalErr, vendorrec."No.");
+                if PurchasePayble."Enable Vendor Approval Rule" then begin
+                    if GenJnlLineLRec."Account Type" = GenJnlLineLRec."Account Type"::Vendor then begin
+                        if vendorRec.Get(GenJnlLineLRec."Account No.") then begin
+                            if ApprlMgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
+                                Error(VenApprovalErr, vendorrec."No.");
+                            if not ApprlMgt.HasApprovalEntries(vendorrec.RecordId) then
+                                Error(VenApprovalErr, vendorrec."No.");
+                        end;
+                    end else
+                        if GenJnlLineLRec."Bal. Account Type" = GenJnlLineLRec."Bal. Account Type"::Vendor then begin
+                            if vendorRec.Get(GenJnlLineLRec."Bal. Account No.") then begin
+                                if ApprlMgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
+                                    Error(VenApprovalErr, vendorrec."No.");
+                                if not ApprlMgt.HasApprovalEntries(vendorrec.RecordId) then
+                                    Error(VenApprovalErr, vendorrec."No.");
+                            end;
+                        end;
                 end;
                 if not PreviewMode then begin
                     if ApprlMgt.IsGeneralJournalLineApprovalsWorkflowEnabled(GenJnlLineLRec) then
