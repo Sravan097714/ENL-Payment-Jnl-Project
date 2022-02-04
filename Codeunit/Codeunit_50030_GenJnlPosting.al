@@ -152,6 +152,14 @@ codeunit 50030 "Gen Jnl Posting"
 
     end;
 
+    procedure ReturnTotalAmountOfJnlLines(var GenJnlLine: Record "Gen. Journal Line") Total: Decimal
+    var
+        TempGenJnlLine: Record "Gen. Journal Line";
+    begin
+        TempGenJnlLine.CopyFilters(GenJnlLine);
+        TempGenJnlLine.CalcSums(Amount);
+        Total := TempGenJnlLine.Amount;
+    end;
 
     var
         gcodePVNumber: Code[20];

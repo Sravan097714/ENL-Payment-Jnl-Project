@@ -48,6 +48,7 @@ tableextension 50030 GenJnlLineExt1 extends "Gen. Journal Line"
                 Approvalmgt: Codeunit "Approvals Mgmt.";
                 VenApprovalErr: Label 'Approval is pending for Vendor %1 to do payments.';
                 CustApprovalErr: Label 'Approval is required for Customer %1 to do payments.';
+                PurchasePayable: Record "Purchases & Payables Setup";
             begin
                 /* B2BSRA1.0
                 customerrec.SetRange("No.", "Account No.");
@@ -60,16 +61,17 @@ tableextension 50030 GenJnlLineExt1 extends "Gen. Journal Line"
                     Payee := vendorrec.PayeeName;
                 */
                 //B2BSRA1.0 >>
+                PurchasePayable.Get();
                 case "Account Type" of
                     "Account Type"::Vendor:
                         begin
                             if vendorrec.Get("Account No.") then begin
-                                /*
-                                if Approvalmgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
-                                    Error(VenApprovalErr, vendorrec."No.");
-                                if not Approvalmgt.HasApprovalEntries(vendorrec.RecordId) then
-                                    Error(VenApprovalErr, vendorrec."No.");
-                                */
+                                if PurchasePayable."Enable Vendor Approval Rule" then begin
+                                    if Approvalmgt.HasOpenOrPendingApprovalEntries(vendorrec.RecordId) then
+                                        Error(VenApprovalErr, vendorrec."No.");
+                                    if not Approvalmgt.HasApprovalEntries(vendorrec.RecordId) then
+                                        Error(VenApprovalErr, vendorrec."No.");
+                                end;
                                 if vendorrec.PayeeName <> '' then
                                     Payee := vendorrec.PayeeName
                                 else
@@ -80,10 +82,6 @@ tableextension 50030 GenJnlLineExt1 extends "Gen. Journal Line"
                     "Account Type"::Customer:
                         begin
                             if customerrec.Get("Account No.") then begin
-                                if Approvalmgt.HasOpenOrPendingApprovalEntries(customerrec.RecordId) then
-                                    Error(CustApprovalErr, customerrec."No.");
-                                if not Approvalmgt.HasApprovalEntries(customerrec.RecordId) then
-                                    Error(CustApprovalErr, customerrec."No.");
                                 CustomerName := customerrec.Name;
                             end;
                         end;
